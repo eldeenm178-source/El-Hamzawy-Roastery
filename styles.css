@@ -1058,17 +1058,37 @@ header {
 }
 
 .address-results {
-  width: 100%;
-  margin-top: 9px;
-  padding: 11px;
+  display: grid;
+  gap: 5px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-top: 8px;
+  padding: 6px;
   border: 1px solid var(--line);
   border-radius: 11px;
   background: #fffdf9;
-  font: inherit;
+  box-shadow: var(--shadow);
 }
 
 .address-results[hidden] {
   display: none;
+}
+
+.address-result {
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink);
+  text-align: right;
+  font: inherit;
+  font-size: 13px;
+}
+
+.address-result:hover,
+.address-result:focus-visible {
+  background: #f3eadc;
 }
 
 .location-hint {

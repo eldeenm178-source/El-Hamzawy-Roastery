@@ -98,7 +98,7 @@
         <div class="field points-use-field"><label for="use-points">استخدم من رصيدك</label><input id="use-points" type="number" min="0" step="1" value="0" aria-describedby="points-use-limit"></div>
       </section>
       <div class="form-grid order-address-fields">
-        <div class="field full"><label for="address">عنوان التوصيل</label><textarea id="address" required autocomplete="street-address" placeholder="اكتب المنطقة والشارع والعنوان بالتفصيل"></textarea><button class="btn btn-gold location-button" id="search-address" type="button">🔎 ابحث عن العنوان واحسب التوصيل</button><select class="address-results" id="address-results" aria-label="اختر العنوان الصحيح من نتائج البحث" hidden><option value="">اختر العنوان المطابق</option></select><small class="location-hint" id="location-status" role="status" aria-live="polite">اكتب عنوانك ثم ابحث عنه لاختيار المكان المطابق وحساب مسافة الطريق.</small><small class="location-hint">بيانات العناوين والطرق © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>.</small></div>
+        <div class="field full"><label for="address">عنوان التوصيل</label><textarea id="address" required autocomplete="street-address" aria-autocomplete="list" aria-controls="address-results" aria-expanded="false" placeholder="اكتب المنطقة والشارع والعنوان بالتفصيل"></textarea><div class="address-results" id="address-results" role="listbox" aria-label="اقتراحات الشوارع" hidden></div><button class="btn btn-gold location-button" id="search-address" type="button">🔎 ابحث عن العنوان واحسب التوصيل</button><small class="location-hint" id="location-status" role="status" aria-live="polite">اكتب اسم الشارع لعرض الاقتراحات، أو ابحث عن العنوان كاملًا.</small><small class="location-hint">بيانات العناوين والطرق © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>.</small></div>
         <div class="field full"><label for="payment">طريقة الدفع</label><select id="payment"><option value="cash">الدفع عند الاستلام</option><option value="wallet">محفظة إلكترونية</option><option value="instapay">InstaPay</option></select></div>
         <section class="digital-payment field full" id="digital-payment" hidden aria-live="polite">
           <div class="payment-details" id="payment-details"></div>
@@ -155,7 +155,7 @@ const products=[
 const cats=[{name:'الكل',icon:'🥣'},{name:'لب والسوداني',icon:'🥜'},{name:'المكسرات',icon:'🌰'},{name:'التوفي والملبس',icon:'🍬'},{name:'الشوكولاتة',icon:'🍫'},{name:'الكاندي',icon:'🍭'}];
 const weights=[{grams:250,label:'ربع كيلو'},{grams:500,label:'نصف كيلو'},{grams:750,label:'ثلاثة أرباع كيلو'},{grams:1000,label:'كيلو'}];
 const paymentDetails={wallet:{label:'حوّل إلى المحفظة على الرقم:',recipient:'01204671999'},instapay:{label:'حوّل عبر InstaPay إلى:',recipient:'mohamed.mohi1999@instapay',url:'https://ipn.eg/S/mohamed.mohi1999/instapay/0EO7N6'}};
-let selectedCat='الكل',cart={},usedPoints=0,activePointsPhone='',appliedCoupon='',customerLocation=null,addressCandidates=[],deliverySearchId=0;
+let selectedCat='الكل',cart={},usedPoints=0,activePointsPhone='',appliedCoupon='',customerLocation=null,addressCandidates=[],deliverySearchId=0,addressSuggestionTimer=null,selectedStreet='';
 const $=id=>document.getElementById(id);
 let receiptPreviewUrl='';
 let trackingTimer=null,activeTracking=null;
@@ -181,23 +181,83 @@ function updatePointsForPhone(){const phone=normalizePhone($('phone').value);if(
 function openCart(){if(!$('cart-dialog').open)$('cart-dialog').showModal()}
 function closeCart(){if($('cart-dialog').open)$('cart-dialog').close()}
 function clearDeliveryQuote(message){
+ clearTimeout(addressSuggestionTimer);
+ addressSuggestionTimer=null;
  deliverySearchId++;
  customerLocation=null;
+ selectedStreet='';
  addressCandidates=[];
- $('address-results').replaceChildren(new Option('اختر العنوان المطابق',''));
+ $('address-results').replaceChildren();
  $('address-results').hidden=true;
- $('address-results').disabled=false;
+ $('address').setAttribute('aria-expanded','false');
+ $('address-results').setAttribute('aria-busy','false');
  $('search-address').disabled=false;
  $('location-status').textContent=message;
  renderCart();
 }
+function showAddressCandidates(){
+ const results=$('address-results');
+ results.replaceChildren(...addressCandidates.map((result,index)=>{
+  const option=document.createElement('button');
+  option.type='button';
+  option.className='address-result';
+  option.id=`address-result-${index}`;
+  option.role='option';
+  option.setAttribute('aria-selected','false');
+  option.dataset.addressIndex=String(index);
+  option.textContent=result.label;
+  return option;
+ }));
+ results.hidden=addressCandidates.length===0;
+ $('address').setAttribute('aria-expanded',String(addressCandidates.length>0));
+}
+async function suggestDeliveryAddresses(query){
+ const requestId=++deliverySearchId,results=$('address-results');
+ results.setAttribute('aria-busy','true');
+ $('location-status').textContent='جارٍ البحث عن الشوارع...';
+ try{
+  const params=new URLSearchParams({
+   q:query,
+   lat:String(storeLocation.latitude),
+   lon:String(storeLocation.longitude),
+   limit:'8',
+   lang:'default',
+   bbox:'30.9,29.75,31.6,30.45'
+  });
+  const response=await fetch(`https://photon.komoot.io/api/?${params.toString()}`);
+  if(!response.ok)throw new Error(`خدمة اقتراح الشوارع غير متاحة الآن (${response.status}).`);
+  const data=await response.json();
+  if(requestId!==deliverySearchId)return;
+  if(!Array.isArray(data.features))throw new Error('وصلت استجابة غير متوقعة من خدمة اقتراح الشوارع.');
+  const candidates=data.features.filter(feature=>feature.properties?.type==='street'||feature.properties?.osm_key==='highway').map(feature=>{
+   const properties=feature.properties||{},coordinates=feature.geometry?.coordinates||[];
+   const street=properties.name||properties.street||'';
+   const label=[street,properties.district,properties.city,properties.state].filter((part,index,array)=>part&&array.indexOf(part)===index).join('، ');
+   return{label,street,latitude:Number(coordinates[1]),longitude:Number(coordinates[0])};
+  }).filter(result=>result.label&&result.street&&Number.isFinite(result.latitude)&&Number.isFinite(result.longitude));
+  const uniqueCandidates=new Map();
+  candidates.forEach(result=>{if(!uniqueCandidates.has(result.label))uniqueCandidates.set(result.label,result)});
+  addressCandidates=[...uniqueCandidates.values()];
+  showAddressCandidates();
+  $('location-status').textContent=addressCandidates.length?'اختار اسم الشارع المناسب من الاقتراحات.':'مفيش اقتراحات للكتابة دي. جرّب كتابة اسم أوضح أو ابحث عن العنوان كاملًا.';
+ }catch(error){
+  if(requestId===deliverySearchId){console.error('تعذر اقتراح شوارع عنوان التوصيل:',error);$('location-status').textContent=error instanceof TypeError?'تعذر الاتصال بخدمة اقتراح الشوارع. تحقق من الإنترنت أو ابحث عن العنوان كاملًا.':error.message||'تعذر تحميل اقتراحات الشوارع. ابحث عن العنوان كاملًا.'}
+ }finally{
+  if(requestId===deliverySearchId)$('address-results').setAttribute('aria-busy','false');
+ }
+}
 async function searchDeliveryAddress(){
  const address=$('address').value.trim(),button=$('search-address');
  if(address.length<5){$('location-status').textContent='اكتب عنوانًا مفصلًا من ٥ أحرف على الأقل ثم ابحث عنه.';$('address').focus();return}
+ clearTimeout(addressSuggestionTimer);
+ addressSuggestionTimer=null;
+ selectedStreet='';
  const requestId=++deliverySearchId;
  customerLocation=null;addressCandidates=[];
- $('address-results').replaceChildren(new Option('اختر العنوان المطابق',''));
+ $('address-results').replaceChildren();
  $('address-results').hidden=true;
+ $('address-results').setAttribute('aria-busy','false');
+ $('address').setAttribute('aria-expanded','false');
  button.disabled=true;$('location-status').textContent='جارٍ البحث عن العنوان...';renderCart();
  try{
   const query=new URLSearchParams({format:'jsonv2',addressdetails:'1',limit:'5',countrycodes:'eg',q:`${address}, مصر`});
@@ -212,8 +272,7 @@ async function searchDeliveryAddress(){
    longitude:Number(result.lon)
   })).filter(result=>result.label&&Number.isFinite(result.latitude)&&Number.isFinite(result.longitude));
   if(!addressCandidates.length){$('location-status').textContent='لم نعثر على العنوان. أضف اسم المنطقة والشارع أو أقرب علامة مميزة ثم حاول مرة أخرى.';return}
-  $('address-results').replaceChildren(new Option('اختر العنوان المطابق من النتائج',''),...addressCandidates.map((result,index)=>new Option(result.label,String(index))));
-  $('address-results').hidden=false;
+  showAddressCandidates();
   $('location-status').textContent='اختر عنوانك الصحيح من النتائج لحساب مسافة الطريق.';
  }catch(error){
   if(requestId===deliverySearchId){console.error('تعذر البحث عن عنوان التوصيل:',error);$('location-status').textContent=error instanceof TypeError?'تعذر الاتصال بخدمة البحث. تحقق من الإنترنت وحاول مرة أخرى.':error.message||'تعذر البحث عن العنوان. تحقق من الإنترنت وحاول مرة أخرى.'}
@@ -221,11 +280,14 @@ async function searchDeliveryAddress(){
   if(requestId===deliverySearchId)button.disabled=false;
  }
 }
-async function calculateDeliveryRoute(){
- const selectedIndex=Number($('address-results').value),destination=addressCandidates[selectedIndex];
+async function calculateDeliveryRoute(selectedIndex){
+ const destination=addressCandidates[selectedIndex];
  if(!destination)return;
+ clearTimeout(addressSuggestionTimer);
+ addressSuggestionTimer=null;
+ if(destination.street){selectedStreet=destination.street;$('address').value=destination.street}
  const requestId=++deliverySearchId,button=$('search-address'),results=$('address-results');
- button.disabled=true;results.disabled=true;$('location-status').textContent='جارٍ حساب مسافة الطريق...';
+ button.disabled=true;results.hidden=true;results.querySelectorAll('button').forEach(option=>option.disabled=true);$('address').setAttribute('aria-expanded','false');$('location-status').textContent='جارٍ حساب مسافة الطريق...';
  try{
   const routeUrl=`${routeServiceUrl}/${storeLocation.longitude},${storeLocation.latitude};${destination.longitude},${destination.latitude}?overview=false&steps=false`;
   const response=await fetch(routeUrl);
@@ -239,9 +301,9 @@ async function calculateDeliveryRoute(){
   $('location-status').textContent=`${destination.label} — مسافة الطريق ${distanceKm.toLocaleString('ar-EG',{maximumFractionDigits:4})} كم، والتوصيل ${money(fee)}.`;
   renderCart();
  }catch(error){
-  if(requestId===deliverySearchId){console.error('تعذر حساب مسافة طريق التوصيل:',error);customerLocation=null;$('location-status').textContent=error instanceof TypeError?'تعذر الاتصال بخدمة حساب الطريق. تحقق من الإنترنت وحاول مرة أخرى.':error.message||'تعذر حساب مسافة الطريق. اختر عنوانًا آخر أو حاول مرة أخرى.';renderCart()}
+  if(requestId===deliverySearchId){console.error('تعذر حساب مسافة طريق التوصيل:',error);customerLocation=null;selectedStreet='';showAddressCandidates();$('location-status').textContent=error instanceof TypeError?'تعذر الاتصال بخدمة حساب الطريق. تحقق من الإنترنت وحاول مرة أخرى.':error.message||'تعذر حساب مسافة الطريق. اختر عنوانًا آخر أو حاول مرة أخرى.';renderCart()}
  }finally{
-  if(requestId===deliverySearchId){button.disabled=false;results.disabled=false}
+  if(requestId===deliverySearchId){button.disabled=false;results.querySelectorAll('button').forEach(option=>option.disabled=false)}
  }
 }
 async function refreshTrackedOrder(){
@@ -333,10 +395,21 @@ $('payment-receipt').addEventListener('change',()=>{
  clearReceiptPreview();receiptPreviewUrl=URL.createObjectURL(file);preview.src=receiptPreviewUrl;preview.hidden=false;
 });
 $('search-address').addEventListener('click',searchDeliveryAddress);
-$('address-results').addEventListener('change',calculateDeliveryRoute);
+$('address-results').addEventListener('click',event=>{
+ const option=event.target.closest('[data-address-index]');
+ if(option)calculateDeliveryRoute(Number(option.dataset.addressIndex));
+});
 $('address').addEventListener('input',()=>{
+ const address=$('address').value.trim();
+ if(selectedStreet&&address.startsWith(selectedStreet)){
+  $('location-status').textContent=customerLocation
+   ?`تم اختيار ${selectedStreet}. يمكنك إضافة رقم العقار أو تفاصيل العنوان.`
+   :'جارٍ حساب مسافة الطريق...';
+  return;
+ }
  const hadDeliveryData=Boolean(customerLocation||addressCandidates.length);
- clearDeliveryQuote(hadDeliveryData?'تغيّر العنوان؛ ابحث عنه مجددًا لحساب تكلفة التوصيل.':'اكتب عنوانك ثم ابحث عنه لاختيار المكان المطابق وحساب مسافة الطريق.');
+ clearDeliveryQuote(hadDeliveryData?'تغيّر العنوان؛ اختار الشارع الصحيح أو ابحث عن العنوان كاملًا.':'اكتب اسم الشارع لعرض الاقتراحات، أو ابحث عن العنوان كاملًا.');
+ if(address)addressSuggestionTimer=setTimeout(()=>suggestDeliveryAddresses(address),400);
 });
 function applyCoupon(){
  const code=$('coupon-code').value.trim().toUpperCase();
