@@ -58,6 +58,29 @@ h1, h2, p { margin-top: 0; }
 .courier-list-wrap table { min-width: 520px; }
 .courier-list-wrap td { white-space: normal; }
 .courier-list-wrap .table-message { height: 54px; }
+.coupon-management { margin: 0 0 26px; padding: 18px; border: 1px solid var(--line); background: var(--surface); }
+.coupon-create-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; gap: 12px; }
+.coupon-create-form .field { min-width: 0; }
+.coupon-create-form label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 800; }
+.coupon-create-form input, .coupon-create-form select, .coupon-create-form textarea { width: 100%; min-width: 0; min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--ink); }
+.coupon-create-form textarea { min-height: 100px; resize: vertical; }
+.coupon-create-form small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+.coupon-products-field { grid-column: span 2; }
+.coupon-create-button { min-height: 44px; white-space: nowrap; }
+.coupon-list-wrap { overflow: auto; margin-top: 12px; border: 1px solid var(--line); }
+.coupon-list-wrap table { min-width: 760px; }
+.coupon-list-wrap td { white-space: normal; }
+.coupon-action { padding: 5px 9px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--forest); font-size: 11px; font-weight: 800; cursor: pointer; }
+.coupon-action + .coupon-action { margin-inline-start: 5px; }
+.coupon-action-danger { color: var(--coral); }
+.coupon-status-active { color: var(--leaf); font-weight: 800; }
+.coupon-status-disabled { color: var(--muted); }
+.product-management { margin: 0 0 26px; padding: 18px; border: 1px solid var(--line); background: var(--surface); }
+.product-search { display: block; max-width: 460px; }
+.product-search input { width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--ink); }
+.product-list-wrap { overflow: auto; margin-top: 12px; border: 1px solid var(--line); }
+.product-list-wrap table { min-width: 720px; }
+.product-admin-thumbnail { width: 48px; height: 48px; border-radius: 5px; object-fit: cover; vertical-align: middle; }
 .refresh-button { width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--forest); font-size: 25px; line-height: 1; }
 .refresh-button:hover { border-color: var(--leaf); color: var(--leaf); }
 .summary-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); border: 1px solid var(--line); background: var(--surface); }
@@ -95,8 +118,18 @@ tbody tr:hover { background: #fbfcf9; }
 .page-notice { margin-top: 8px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
 
-.order-dialog { width: min(620px, calc(100% - 24px)); max-height: min(88vh, 850px); padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 100px #102b1e40; }
+.order-dialog, .product-dialog { width: min(620px, calc(100% - 24px)); max-height: min(88vh, 850px); padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); box-shadow: 0 30px 100px #102b1e40; }
 .order-dialog::backdrop { background: #122b2099; backdrop-filter: blur(3px); }
+.product-dialog::backdrop { background: #122b2099; backdrop-filter: blur(3px); }
+.product-edit-form { display: grid; gap: 12px; padding: 18px 24px 24px; }
+.product-edit-form .field { min-width: 0; }
+.product-edit-form .field > label { display: block; margin-bottom: 5px; font-size: 12px; font-weight: 800; }
+.product-edit-form input:not([type="checkbox"]), .product-edit-form select { width: 100%; min-height: 42px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 5px; background: #fff; color: var(--ink); }
+.product-edit-form input:disabled { background: #f1f3ee; color: var(--muted); }
+.product-edit-form small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+.product-no-price { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+.product-edit-message { margin: 0; }
+.product-edit-actions { display: flex; justify-content: flex-start; gap: 9px; }
 .dialog-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 22px 24px 16px; border-bottom: 1px solid var(--line); }
 .dialog-header h2 { margin: 0; color: var(--forest); font-size: 20px; }
 .close-button { width: 34px; height: 34px; border-radius: 4px; background: #f1f3ee; color: var(--ink); font-size: 23px; }
@@ -124,6 +157,12 @@ tbody tr:hover { background: #fbfcf9; }
   .courier-management { padding: 14px; }
   .courier-create-form { grid-template-columns: 1fr; }
   .courier-create-button { width: 100%; }
+  .coupon-management { padding: 14px; }
+  .coupon-create-form { grid-template-columns: 1fr; }
+  .coupon-products-field { grid-column: auto; }
+  .coupon-create-button { width: 100%; }
+  .product-management { padding: 14px; }
+  .product-dialog .dialog-header, .product-edit-form { padding-right: 16px; padding-left: 16px; }
   .summary-grid { grid-template-columns: 1fr 1fr; }
   .summary-item { padding: 12px 14px; border-bottom: 1px solid var(--line); }
   .summary-item:nth-child(2) { border-left: 0; }

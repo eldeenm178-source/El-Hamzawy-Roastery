@@ -48,6 +48,27 @@
       <p class="notice" id="courier-message" role="status"></p>
       <div class="courier-list-wrap"><table><thead><tr><th>المندوب</th><th>البريد الإلكتروني</th><th>تاريخ الإنشاء</th></tr></thead><tbody id="couriers-body"><tr><td colspan="3" class="table-message">جارٍ تحميل القائمة...</td></tr></tbody></table></div>
     </section>
+    <section class="coupon-management" aria-labelledby="coupon-heading">
+      <div class="courier-management-heading"><div><p class="eyebrow">عروض المتجر</p><h2 id="coupon-heading">أكواد الخصم</h2></div><button class="quiet-button" id="refresh-coupons" type="button">تحديث الأكواد</button></div>
+      <form class="coupon-create-form" id="create-coupon-form">
+        <div class="field"><label for="coupon-admin-code">كود الخصم</label><input id="coupon-admin-code" required minlength="2" maxlength="40" pattern="[A-Za-z0-9_\-]+" autocomplete="off" placeholder="مثال: WELCOME10"></div>
+        <div class="field"><label for="coupon-admin-type">نوع الخصم</label><select id="coupon-admin-type"><option value="fixed">مبلغ بالجنيه</option><option value="percent">نسبة مئوية</option></select></div>
+        <div class="field"><label for="coupon-admin-value">قيمة الخصم</label><input id="coupon-admin-value" type="number" min="0.01" step="0.01" required></div>
+        <div class="field"><label for="coupon-admin-scope">نطاق التطبيق</label><select id="coupon-admin-scope"><option value="all">كل المنتجات</option><option value="selected">منتجات محددة</option></select></div>
+        <div class="field coupon-products-field" id="coupon-products-field" hidden><label for="coupon-admin-products">أسماء المنتجات المشمولة</label><textarea id="coupon-admin-products" rows="4" placeholder="اكتب اسم كل منتج في سطر كما يظهر في المنيو"></textarea><small>اكتب الاسم كاملًا كما يظهر للعميل، كل منتج في سطر.</small></div>
+        <div class="field"><label for="coupon-admin-start">يبدأ في (اختياري)</label><input id="coupon-admin-start" type="datetime-local"></div>
+        <div class="field"><label for="coupon-admin-expiry">ينتهي في (اختياري)</label><input id="coupon-admin-expiry" type="datetime-local"></div>
+        <button class="primary-button coupon-create-button" type="submit">إضافة كود الخصم</button>
+      </form>
+      <p class="notice" id="coupon-message" role="status"></p>
+      <div class="coupon-list-wrap"><table><thead><tr><th>الكود</th><th>الخصم</th><th>المنتجات</th><th>الصلاحية</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="coupons-body"><tr><td colspan="6" class="table-message">جارٍ تحميل الأكواد...</td></tr></tbody></table></div>
+    </section>
+    <section class="product-management" aria-labelledby="product-heading">
+      <div class="courier-management-heading"><div><p class="eyebrow">كتالوج المتجر</p><h2 id="product-heading">إدارة المنتجات</h2></div><button class="quiet-button" id="refresh-products" type="button">تحديث المنتجات</button></div>
+      <label class="product-search"><span class="visually-hidden">البحث في المنتجات</span><input id="search-products" type="search" placeholder="ابحث باسم المنتج أو القسم"></label>
+      <p class="notice" id="product-message" role="status"></p>
+      <div class="product-list-wrap"><table><thead><tr><th>الصورة</th><th>اسم المنتج</th><th>القسم</th><th>السعر</th><th>التعديل</th></tr></thead><tbody id="products-body"><tr><td colspan="5" class="table-message">جارٍ تحميل المنتجات...</td></tr></tbody></table></div>
+    </section>
     <div class="summary-grid" aria-live="polite">
       <article class="summary-item"><span>كل الطلبات</span><strong id="count-all">—</strong></article>
       <article class="summary-item"><span>طلبات جديدة</span><strong id="count-new">—</strong></article>
@@ -71,12 +92,25 @@
   </section>
 </main>
 
+<dialog class="product-dialog" id="product-dialog" aria-labelledby="product-dialog-title">
+  <div class="dialog-header"><div><p class="eyebrow">تعديل بيانات المنتج</p><h2 id="product-dialog-title"></h2></div><button class="close-button" id="close-product-dialog" type="button" aria-label="إغلاق">×</button></div>
+  <form class="product-edit-form" id="product-edit-form">
+    <div class="field"><label for="product-edit-name">اسم المنتج</label><input id="product-edit-name" required maxlength="160"></div>
+    <div class="field"><label for="product-edit-category">القسم</label><select id="product-edit-category" required></select></div>
+    <div class="field"><label for="product-edit-price">السعر</label><input id="product-edit-price" type="number" min="0" step="0.01"><small id="product-price-hint"></small></div>
+    <label class="product-no-price"><input id="product-edit-no-price" type="checkbox"> السعر يُحدد عند الطلب</label>
+    <div class="field product-image-field"><label for="product-edit-image">صورة المنتج (مسار داخل assets/products)</label><input id="product-edit-image" list="product-image-options" required maxlength="200" placeholder="real/IMG_9456.jpg"><datalist id="product-image-options"></datalist><small>اختر صورة مستخدمة في كتالوج المتجر، واكتب مسارها النسبي دون assets/products/.</small></div>
+    <p class="notice product-edit-message" id="product-edit-message" role="status"></p>
+    <div class="product-edit-actions"><button class="quiet-button" id="cancel-product-edit" type="button">إلغاء</button><button class="primary-button" type="submit">حفظ التعديلات</button></div>
+  </form>
+</dialog>
 <dialog class="order-dialog" id="order-dialog" aria-labelledby="dialog-title">
   <div class="dialog-header"><div><p class="eyebrow">تفاصيل الطلب</p><h2 id="dialog-title"></h2></div><button class="close-button" id="close-dialog" type="button" aria-label="إغلاق">×</button></div>
   <div class="dialog-content" id="order-details"></div>
   <form class="status-form" id="status-form"><label for="order-status">حالة الدفع</label><div class="status-actions"><select id="order-status" required></select><button class="primary-button" type="submit">حفظ الحالة</button></div><p class="notice" id="status-message" role="status"></p></form>
   <form class="status-form fulfillment-form" id="fulfillment-form"><label for="fulfillment-status">تنفيذ الطلب</label><div class="status-actions"><select id="fulfillment-status" required><option value="قيد التجهيز">قيد التجهيز</option><option value="مكتمل">مكتمل</option></select><button class="primary-button" type="submit">حفظ التنفيذ</button></div><p class="notice" id="fulfillment-message" role="status"></p></form>
 </dialog>
+<script src="product-catalog.js"></script>
 <script src="admin.js"></script>
 </body>
 </html>
