@@ -56,7 +56,7 @@
 	KASHIER_SECRET_KEY=<test secret key>
 	KASHIER_API_KEY=<test payment API key>
 	KASHIER_MERCHANT_ID=<test merchant ID>
-	KASHIER_MERCHANT_REDIRECT=https://your-published-site.example/
+	KASHIER_MERCHANT_REDIRECT=https://sasa273012-art.github.io/El-Hamzawy-Roastery/
    استبدل رابط المثال بعنوان الموقع المنشور الفعلي. يرسل الموقع العميل إلى هذا العنوان بعد الدفع، ويُرسل الخادم webhook تلقائيًا إلى `https://odwmymujroxztatmkxav.supabase.co/functions/v1/kashier-webhook`.
 3) استخدم بيانات الاختبار من لوحة/وثائق Kashier، وتحقق من حالة الطلب في الموقع ولوحة الإدارة. تنتهي جلسة الدفع بعد 30 دقيقة؛ بعد انتهائها أنشئ طلبًا جديدًا.
 4) حساب Kashier الحالي في وضع الاختبار. الدفع الحقيقي غير مفعّل في الكود حاليًا: يجب أولًا تفعيل الحساب لدى Kashier وإضافة تحقق سعري موثوق من جهة الخادم، لأن بيانات المنتجات والأسعار الحالية تُرسل من المتصفح. لا تغيّر `KASHIER_MODE` إلى `live` ولا تستخدم مفاتيح الإنتاج قبل إكمال ذلك. لا ترسل المفاتيح السرية في المحادثة أو تحفظها في Git.
