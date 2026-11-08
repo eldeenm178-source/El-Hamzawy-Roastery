@@ -1,5 +1,0 @@
-[functions.create-kashier-session]
-verify_jwt = false
-
-[functions.kashier-webhook]
-verify_jwt = false
